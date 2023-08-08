@@ -23,16 +23,17 @@ pub type Position {
 /// the user-defined error type it can return.
 pub opaque type Parser(a, e) {
   Parser(
-    parse: fn(String, Position) -> Result(#(a, String, Position), ParseError(e)),
+    parse: fn(List(String), Position) ->
+      Result(#(a, List(String), Position), ParseError(e)),
   )
 }
 
-/// Apply a parser to a string (holding on to extra result info that is hidden from the library user).
+/// Apply a parser to a list of graphemes (holding on to extra result info that is hidden from the library user).
 fn run(
   p: Parser(a, e),
-  src: String,
+  src: List(String),
   pos: Position,
-) -> Result(#(a, String, Position), ParseError(e)) {
+) -> Result(#(a, List(String), Position), ParseError(e)) {
   case p {
     Parser(f) -> f(src, pos)
   }
@@ -40,7 +41,7 @@ fn run(
 
 /// Apply a parser to a string.
 pub fn go(p: Parser(a, e), src: String) -> Result(a, ParseError(e)) {
-  case run(p, src, Position(1, 1)) {
+  case run(p, string.to_graphemes(src), Position(1, 1)) {
     Ok(#(x, _, _)) -> Ok(x)
     Error(e) -> Error(e)
   }
@@ -55,8 +56,8 @@ pub fn pos() -> Parser(Position, e) {
 pub fn satisfy(when pred: fn(String) -> Bool) -> Parser(String, e) {
   Parser(fn(source, pos) {
     let assert Position(row, col) = pos
-    case string.pop_grapheme(source) {
-      Ok(#(h, t)) ->
+    case source {
+      [h, ..t] ->
         case pred(h) {
           True ->
             case h {
@@ -65,7 +66,7 @@ pub fn satisfy(when pred: fn(String) -> Bool) -> Parser(String, e) {
             }
           False -> Error(Unexpected(h))
         }
-      Error(Nil) -> Error(Unexpected("EOF"))
+      [] -> Error(Unexpected("EOF"))
     }
   })
 }
@@ -118,6 +119,18 @@ pub fn choice(ps: List(Parser(a, e))) -> Parser(a, e) {
 /// Parse an alphanumeric character.
 pub fn alphanum() -> Parser(String, e) {
   alt(digit(), letter())
+}
+
+/// Parse zero or more whitespace characters.
+pub fn whitespace() -> Parser(String, e) {
+  many(choice([char(" "), char("\t"), char("\n")]))
+  |> map(string.concat)
+}
+
+/// Parse one or more whitespace characters.
+pub fn whitespace1() -> Parser(String, e) {
+  many1(choice([char(" "), char("\t"), char("\n")]))
+  |> map(string.concat)
 }
 
 /// Keep trying the parser until it fails, and return the array of parsed results.
@@ -246,8 +259,8 @@ pub fn not(p: Parser(a, e)) -> Parser(Nil, e) {
 pub fn end() -> Parser(Nil, e) {
   Parser(fn(source, pos) {
     case source {
-      "" -> Ok(#(Nil, source, pos))
-      _ -> Error(Unexpected(source))
+      [] -> Ok(#(Nil, source, pos))
+      [h, ..] -> Error(Unexpected(h))
     }
   })
 }
