@@ -19,5 +19,13 @@ pub fn pos_test() {
         use _ <- party.do(party.many(party.digit()))
         party.pos()
     }, "117e")
-    |> should.equal(Ok(3))
+    |> should.equal(Ok(party.Position(1, 4)))
+}
+
+pub fn demorgan_test() {
+    // not a perfect test because it's just on the input "a" but it's something.
+    party.go(party.seq(party.not(party.digit()), party.not(party.letter())), "a")
+    |> should.equal(
+        party.go(party.not(party.alt(party.digit(), party.letter())), "a")
+    )
 }
