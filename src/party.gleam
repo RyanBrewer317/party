@@ -61,7 +61,7 @@ pub fn satisfy(when pred: fn(String) -> Bool) -> Parser(String, e) {
         case pred(h) {
           True ->
             case h {
-              "\n" -> Ok(#(h, t, Position(row + 1, col)))
+              "\n" -> Ok(#(h, t, Position(row + 1, 0)))
               _ -> Ok(#(h, t, Position(row, col + 1)))
             }
           False -> Error(Unexpected(h))
