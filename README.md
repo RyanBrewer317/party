@@ -3,7 +3,16 @@
 [![Package Version](https://img.shields.io/hexpm/v/party)](https://hex.pm/packages/party)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/party/)
 
-A Gleam project
+A little parser combinator library for Gleam!
+
+A little demo:
+```gleam
+fn identstring() -> Parser(String, e) {
+  use first <- do(lowercase_letter())
+  use rest <- do(many_concat(either(alphanum(), char("_"))))
+  return(first <> rest)
+}
+```
 
 ## Installation
 

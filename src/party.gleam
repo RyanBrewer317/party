@@ -10,8 +10,8 @@ import gleam/result
 /// adding a `int.parse` call into your parser pipeline.
 /// See `try` for using this feature.
 pub type ParseError(e) {
-  Unexpected(error: String)
-  UserError(error: e)
+  Unexpected(pos: Position, error: String)
+  UserError(pos: Position, error: e)
 }
 
 /// The type for positions within a string.
@@ -64,9 +64,9 @@ pub fn satisfy(when pred: fn(String) -> Bool) -> Parser(String, e) {
               "\n" -> Ok(#(h, t, Position(row + 1, 0)))
               _ -> Ok(#(h, t, Position(row, col + 1)))
             }
-          False -> Error(Unexpected(h))
+          False -> Error(Unexpected(pos, h))
         }
-      [] -> Error(Unexpected("EOF"))
+      [] -> Error(Unexpected(pos, "EOF"))
     }
   })
 }
@@ -83,7 +83,7 @@ pub fn uppercase_letter() -> Parser(String, e) {
 
 /// Parse a lowercase or uppercase letter.
 pub fn letter() -> Parser(String, e) {
-  alt(lowercase_letter(), uppercase_letter())
+  either(lowercase_letter(), uppercase_letter())
 }
 
 /// Parse a specific character.
@@ -96,8 +96,13 @@ pub fn digit() -> Parser(String, e) {
   satisfy(fn(c) { string.contains("0123456789", c) })
 }
 
+/// Parse a sequence of digits.
+pub fn digits() -> Parser(String, e) {
+  many1_concat(digit())
+}
+
 /// Parse the first parser, or the second if the first fails.
-pub fn alt(p: Parser(a, e), q: Parser(a, e)) -> Parser(a, e) {
+pub fn either(p: Parser(a, e), q: Parser(a, e)) -> Parser(a, e) {
   Parser(fn(source, pos) { result.or(run(p, source, pos), run(q, source, pos)) })
 }
 
@@ -105,7 +110,7 @@ pub fn alt(p: Parser(a, e), q: Parser(a, e)) -> Parser(a, e) {
 pub fn choice(ps: List(Parser(a, e))) -> Parser(a, e) {
   Parser(fn(source, pos) {
     case ps {
-      [] -> Error(Unexpected("choiceless choice"))
+      [] -> panic as "choice doesn't accept an empty list of parsers" // TODO: should this be an Unexpected instead?
       [p] -> run(p, source, pos)
       [p, ..t] ->
         case run(p, source, pos) {
@@ -118,19 +123,17 @@ pub fn choice(ps: List(Parser(a, e))) -> Parser(a, e) {
 
 /// Parse an alphanumeric character.
 pub fn alphanum() -> Parser(String, e) {
-  alt(digit(), letter())
+  either(digit(), letter())
 }
 
 /// Parse zero or more whitespace characters.
 pub fn whitespace() -> Parser(String, e) {
-  many(choice([char(" "), char("\t"), char("\n")]))
-  |> map(string.concat)
+  many_concat(choice([char(" "), char("\t"), char("\n")]))
 }
 
 /// Parse one or more whitespace characters.
 pub fn whitespace1() -> Parser(String, e) {
-  many1(choice([char(" "), char("\t"), char("\n")]))
-  |> map(string.concat)
+  many1_concat(choice([char(" "), char("\t"), char("\n")]))
 }
 
 /// Keep trying the parser until it fails, and return the array of parsed results.
@@ -140,12 +143,17 @@ pub fn many(p: Parser(a, e)) -> Parser(List(a), e) {
     case run(p, source, pos) {
       Error(_) -> Ok(#([], source, pos))
       Ok(#(x, r, pos2)) ->
-        result.map(
-          run(many(p), r, pos2),
-          fn(res) { #([x, ..res.0], res.1, res.2) },
-        )
+        result.map(run(many(p), r, pos2), fn(res) {
+          #([x, ..res.0], res.1, res.2)
+        })
     }
   })
+}
+
+/// Parse a certain string as many times as possible, returning everything that was parsed.
+/// This cannot fail because it parses zero or more times!
+pub fn many_concat(p: Parser(String, e)) -> Parser(String, e) {
+  many(p) |> map(string.concat)
 }
 
 /// Keep trying the parser until it fails, and return the array of parsed results.
@@ -155,18 +163,51 @@ pub fn many1(p: Parser(a, e)) -> Parser(List(a), e) {
     case run(p, source, pos) {
       Error(e) -> Error(e)
       Ok(#(x, r, pos2)) ->
-        result.map(
-          run(many(p), r, pos2),
-          fn(res) { #([x, ..res.0], res.1, res.2) },
-        )
+        result.map(run(many(p), r, pos2), fn(res) {
+          #([x, ..res.0], res.1, res.2)
+        })
     }
   })
+}
+
+/// Parse a certain string as many times as possible, returning everything that was parsed.
+/// This can fail, because it must parse successfully at least once!
+pub fn many1_concat(p: Parser(String, e)) -> Parser(String, e) {
+  many1(p) |> map(string.concat)
 }
 
 /// Do the first parser, ignore its result, then do the second parser.
 pub fn seq(p: Parser(a, e), q: Parser(b, e)) -> Parser(b, e) {
   use _ <- do(p)
   q
+}
+
+/// Parse a sequence separated by the given separator parser.
+pub fn sep(parser: Parser(a, e), by s: Parser(b, e)) -> Parser(List(a), e) {
+  use mb_a <- do(perhaps(parser))
+  case mb_a {
+    Ok(a) -> {
+      use res <- do(perhaps(s))
+      case res {
+        Ok(_) -> {
+          use rest <- do(sep(parser, by: s))
+          return([a, ..rest])
+        }
+        Error(Nil) -> return([a])
+      }
+    }
+    Error(Nil) -> return([])
+  }
+}
+
+/// Parse a sequence separated by the given separator parser.
+/// This only succeeds if at least one element of the sequence was parsed.
+pub fn sep1(parser: Parser(a, e), by s: Parser(b, e)) -> Parser(List(a), e) {
+  use sequence <- do(sep(parser, by: s))
+  case sequence {
+    [] -> fail()
+    _ -> return(sequence)
+  }
 }
 
 /// Do `p`, then apply `f` to the result if it succeeded.
@@ -188,7 +229,7 @@ pub fn try(p: Parser(a, e), f: fn(a) -> Result(b, e)) -> Parser(b, e) {
       Ok(#(x, r, pos2)) ->
         case f(x) {
           Ok(a) -> Ok(#(a, r, pos2))
-          Error(e) -> Error(UserError(e))
+          Error(e) -> Error(UserError(pos2, e))
         }
       Error(e) -> Error(e)
     }
@@ -203,8 +244,8 @@ pub fn error_map(p: Parser(a, e), f: fn(e) -> f) -> Parser(a, f) {
       Ok(res) -> Ok(res)
       Error(e) ->
         case e {
-          UserError(e) -> Error(UserError(f(e)))
-          Unexpected(s) -> Error(Unexpected(s))
+          UserError(pos, e) -> Error(UserError(pos, f(e)))
+          Unexpected(pos, s) -> Error(Unexpected(pos, s))
         }
     }
   })
@@ -228,6 +269,7 @@ pub fn all(ps: List(Parser(a, e))) -> Parser(a, e) {
       use _ <- do(h)
       all(t)
     }
+    _ -> panic as "all(parsers) doesn't accept an empty list of parsers" // TODO: should this be an Unexpected instead?
   }
 }
 
@@ -244,11 +286,11 @@ pub fn string(s: String) -> Parser(String, e) {
 }
 
 /// Negate a parser: if it succeeds, this fails, and vice versa.
-/// Example: `seq(string("if"), not(alt(alphanum(), char("_"))))`
+/// Example: `seq(string("if"), not(either(alphanum(), char("_"))))`
 pub fn not(p: Parser(a, e)) -> Parser(Nil, e) {
   Parser(fn(source, pos) {
     case run(p, source, pos) {
-      Ok(_) -> Error(Unexpected(""))
+      Ok(_) -> Error(Unexpected(pos, ""))
       // todo: better error message here (add a label system)
       Error(_) -> Ok(#(Nil, source, pos))
     }
@@ -260,7 +302,7 @@ pub fn end() -> Parser(Nil, e) {
   Parser(fn(source, pos) {
     case source {
       [] -> Ok(#(Nil, source, pos))
-      [h, ..] -> Error(Unexpected(h))
+      [h, ..] -> Error(Unexpected(pos, h))
     }
   })
 }
@@ -297,4 +339,14 @@ pub fn do(p: Parser(a, e), f: fn(a) -> Parser(b, e)) -> Parser(b, e) {
 /// But I prefer using it, stylistically.
 pub fn return(x) {
   Parser(fn(source, pos) { Ok(#(x, source, pos)) })
+}
+
+/// Immediately fail regardless of the next input
+pub fn fail() -> Parser(a, e) {
+  Parser(fn(source, pos) {
+    case source {
+      [] -> Error(Unexpected(pos, "EOF"))
+      [h, .._t] -> Error(Unexpected(pos, h))
+    }
+  })
 }

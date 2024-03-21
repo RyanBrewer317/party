@@ -27,9 +27,10 @@ pub fn pos_test() {
 
 pub fn demorgan_test() {
   // not a perfect test because it's just on the input "a" but it's something.
+  // TODO: fuzz test this with a bunch of generated strings. It should work on any, I think.
   party.go(party.seq(party.not(party.digit()), party.not(party.letter())), "a")
   |> should.equal(party.go(
-    party.not(party.alt(party.digit(), party.letter())),
+    party.not(party.either(party.digit(), party.letter())),
     "a",
   ))
 }
