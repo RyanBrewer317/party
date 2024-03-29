@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2024-03-28
+
+### Fixed
+
+ - Some `sep` and `sep1` bugs and poor performance.
+
+### Changed
+
+ - Relicensed to MPL-2.0 to be less viral. This is an increase in flexibility and in general projects that were depending on it under the GPLv3 license will not need to do anything to keep using it, as MPL-2.0 code can be used in GPLv3 codebases.
+
 ## [1.0.0] - 2024-03-21
 
 ### Added

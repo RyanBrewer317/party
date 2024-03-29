@@ -1,5 +1,9 @@
-//// Party: A simple parser combinator library.
-//// Party is pre-alpha and breaking changes should be expected in the near future.
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+//// A simple parser combinator library.
+//// Party is stable, though breaking changes might come in a far-future 2.0 or 3.0 release.
 
 import gleam/string
 import gleam/result
@@ -184,18 +188,9 @@ pub fn seq(p: Parser(a, e), q: Parser(b, e)) -> Parser(b, e) {
 
 /// Parse a sequence separated by the given separator parser.
 pub fn sep(parser: Parser(a, e), by s: Parser(b, e)) -> Parser(List(a), e) {
-  use mb_a <- do(perhaps(parser))
-  case mb_a {
-    Ok(a) -> {
-      use res <- do(perhaps(s))
-      case res {
-        Ok(_) -> {
-          use rest <- do(sep(parser, by: s))
-          return([a, ..rest])
-        }
-        Error(Nil) -> return([a])
-      }
-    }
+  use res <- do(perhaps(sep1(parser, by: s)))
+  case res {
+    Ok(sequence) -> return(sequence)
     Error(Nil) -> return([])
   }
 }
@@ -203,11 +198,9 @@ pub fn sep(parser: Parser(a, e), by s: Parser(b, e)) -> Parser(List(a), e) {
 /// Parse a sequence separated by the given separator parser.
 /// This only succeeds if at least one element of the sequence was parsed.
 pub fn sep1(parser: Parser(a, e), by s: Parser(b, e)) -> Parser(List(a), e) {
-  use sequence <- do(sep(parser, by: s))
-  case sequence {
-    [] -> fail()
-    _ -> return(sequence)
-  }
+  use first <- do(parser)
+  use rest <- do(many(seq(s, parser)))
+  return([first, ..rest])
 }
 
 /// Do `p`, then apply `f` to the result if it succeeded.

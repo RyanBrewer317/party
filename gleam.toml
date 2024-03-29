@@ -1,8 +1,8 @@
 name = "party"
-version = "1.0.0"
-description = "A little parser combinator library"
+version = "1.0.1"
+description = "A little parser combinator library in Gleam"
 
-licences = ["GPL-3.0-or-later"]
+licences = ["MPL-2.0"]
 repository = { type = "github", user = "RyanBrewer317", repo = "party" }
 gleam = ">= 0.32.0"
 # links = [{ title = "Website", href = "https://gleam.run" }]
