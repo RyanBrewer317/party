@@ -7,10 +7,16 @@ A little parser combinator library for Gleam!
 
 A little demo:
 ```gleam
-fn identstring() -> Parser(String, e) {
+fn ident_string() -> Parser(String, e) {
   use first <- do(lowercase_letter())
   use rest <- do(many_concat(either(alphanum(), char("_"))))
   return(first <> rest)
+}
+
+fn main() {
+  let input = "hello_World1"
+  let result = go(ident_string(), input)
+  let assert Ok("hello_World1") = result
 }
 ```
 
