@@ -1,5 +1,5 @@
 name = "party"
-version = "1.0.1"
+version = "1.0.2"
 description = "A little parser combinator library in Gleam."
 
 licences = ["MPL-2.0"]
