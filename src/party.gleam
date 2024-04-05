@@ -283,7 +283,11 @@ pub fn string(s: String) -> Parser(String, e) {
 pub fn not(p: Parser(a, e)) -> Parser(Nil, e) {
   Parser(fn(source, pos) {
     case run(p, source, pos) {
-      Ok(_) -> Error(Unexpected(pos, ""))
+      Ok(_) -> 
+        case source {
+          [h, ..] -> Error(Unexpected(pos, h))
+          _ -> Error(Unexpected(pos, "EOF"))
+        }
       // todo: better error message here (add a label system)
       Error(_) -> Ok(#(Nil, source, pos))
     }
