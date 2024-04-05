@@ -342,7 +342,7 @@ pub fn return(x) {
   Parser(fn(source, pos) { Ok(#(x, source, pos)) })
 }
 
-/// Immediately fail regardless of the next input
+/// Immediately fail regardless of the next input.
 pub fn fail() -> Parser(a, e) {
   Parser(fn(source, pos) {
     case source {
@@ -350,4 +350,25 @@ pub fn fail() -> Parser(a, e) {
       [h, ..] -> Error(Unexpected(pos, h))
     }
   })
+}
+
+/// Parse zero or more repetitions of a parser, collecting the results into a list.
+/// Stop when the terminator parser succeeds, even if the looping parser would also succeed.
+/// The terminator parser's results are consumed and discarded.
+/// The main motivator for `until` is multiline comments ending in `*/`, `-->`, `-}`, `*)`, etc.
+pub fn until(
+  do p: Parser(a, e),
+  until terminator: Parser(b, e),
+) -> Parser(List(a), e) {
+  either(
+    {
+      use _ <- do(terminator)
+      return([])
+    },
+    {
+      use first <- do(p)
+      use rest <- do(until(p, terminator))
+      return([first, ..rest])
+    },
+  )
 }

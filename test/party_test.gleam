@@ -278,3 +278,12 @@ pub fn fail_test() {
   party.go(party.fail(), "a")
   |> should.equal(Error(party.Unexpected(party.Position(1, 1), "a")))
 }
+
+pub fn until_test() {
+  party.go(party.until(do: party.char("a"), until: party.char("b")), "aab")
+  |> should.equal(Ok(["a", "a"]))
+  party.go(party.until(do: party.char("a"), until: party.char("b")), "a")
+  |> should.equal(Error(party.Unexpected(party.Position(1, 2), "EOF")))
+  party.go(party.until(do: party.char("a"), until: party.char("c")), "ac")
+  |> should.equal(Error(party.Unexpected(party.Position(1, 2), "c")))
+}
