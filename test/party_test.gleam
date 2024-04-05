@@ -287,3 +287,14 @@ pub fn until_test() {
   party.go(party.until(do: party.char("a"), until: party.char("b")), "ac")
   |> should.equal(Error(party.Unexpected(party.Position(1, 2), "c")))
 }
+
+pub fn multiline_comment_test() {
+  party.go(
+    party.map(
+      party.until(do: party.satisfy(fn(_) { True }), until: party.string("*/")),
+      string.concat,
+    ),
+    "hello! * */ ",
+  )
+  |> should.equal(Ok("hello! * "))
+}
