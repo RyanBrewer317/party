@@ -222,7 +222,7 @@ pub fn try(p: Parser(a, e), f: fn(a) -> Result(b, e)) -> Parser(b, e) {
       Ok(#(x, r, pos2)) ->
         case f(x) {
           Ok(a) -> Ok(#(a, r, pos2))
-          Error(e) -> Error(UserError(pos2, e))
+          Error(e) -> Error(UserError(pos, e))
         }
       Error(e) -> Error(e)
     }
