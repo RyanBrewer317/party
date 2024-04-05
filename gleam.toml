@@ -1,6 +1,6 @@
 name = "party"
 version = "1.0.1"
-description = "A little parser combinator library in Gleam"
+description = "A little parser combinator library in Gleam."
 
 licences = ["MPL-2.0"]
 repository = { type = "github", user = "RyanBrewer317", repo = "party" }

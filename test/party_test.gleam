@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import gleeunit
 import gleeunit/should
 import party
@@ -257,7 +261,7 @@ pub fn end_test() {
 }
 
 pub fn lazy_test() {
-  party.go(party.lazy(fn() {party.char("a")}), "a")
+  party.go(party.lazy(fn() { party.char("a") }), "a")
   |> should.equal(Ok("a"))
 }
 

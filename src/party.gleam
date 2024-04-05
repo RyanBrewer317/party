@@ -114,7 +114,8 @@ pub fn either(p: Parser(a, e), q: Parser(a, e)) -> Parser(a, e) {
 pub fn choice(ps: List(Parser(a, e))) -> Parser(a, e) {
   Parser(fn(source, pos) {
     case ps {
-      [] -> panic as "choice doesn't accept an empty list of parsers" // TODO: should this be an Unexpected instead?
+      [] -> panic as "choice doesn't accept an empty list of parsers"
+      // TODO: should this be an Unexpected instead?
       [p] -> run(p, source, pos)
       [p, ..t] ->
         case run(p, source, pos) {
@@ -157,7 +158,8 @@ pub fn many(p: Parser(a, e)) -> Parser(List(a), e) {
 /// Parse a certain string as many times as possible, returning everything that was parsed.
 /// This cannot fail because it parses zero or more times!
 pub fn many_concat(p: Parser(String, e)) -> Parser(String, e) {
-  many(p) |> map(string.concat)
+  many(p)
+  |> map(string.concat)
 }
 
 /// Keep trying the parser until it fails, and return the array of parsed results.
@@ -177,7 +179,8 @@ pub fn many1(p: Parser(a, e)) -> Parser(List(a), e) {
 /// Parse a certain string as many times as possible, returning everything that was parsed.
 /// This can fail, because it must parse successfully at least once!
 pub fn many1_concat(p: Parser(String, e)) -> Parser(String, e) {
-  many1(p) |> map(string.concat)
+  many1(p)
+  |> map(string.concat)
 }
 
 /// Do the first parser, ignore its result, then do the second parser.
@@ -262,8 +265,9 @@ pub fn all(ps: List(Parser(a, e))) -> Parser(a, e) {
       use _ <- do(h)
       all(t)
     }
-    _ -> panic as "all(parsers) doesn't accept an empty list of parsers" // TODO: should this be an Unexpected instead?
+    _ -> panic as "all(parsers) doesn't accept an empty list of parsers"
   }
+  // TODO: should this be an Unexpected instead?
 }
 
 /// Parse an exact string of characters.
@@ -283,7 +287,7 @@ pub fn string(s: String) -> Parser(String, e) {
 pub fn not(p: Parser(a, e)) -> Parser(Nil, e) {
   Parser(fn(source, pos) {
     case run(p, source, pos) {
-      Ok(_) -> 
+      Ok(_) ->
         case source {
           [h, ..] -> Error(Unexpected(pos, h))
           _ -> Error(Unexpected(pos, "EOF"))
@@ -343,7 +347,7 @@ pub fn fail() -> Parser(a, e) {
   Parser(fn(source, pos) {
     case source {
       [] -> Error(Unexpected(pos, "EOF"))
-      [h, .._t] -> Error(Unexpected(pos, h))
+      [h, ..] -> Error(Unexpected(pos, h))
     }
   })
 }
