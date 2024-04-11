@@ -321,7 +321,7 @@ pub fn lazy(p: fn() -> Parser(a, e)) -> Parser(a, e) {
 /// fn identifier() -> Parser(String, e) {
 ///     use pos <- do(pos())
 ///     use first <- do(lowercase_letter())
-///     use rest <- do(many(alt(alphanum(), char("_"))))
+///     use rest <- do(many(either(alphanum(), char("_"))))
 ///     return(Ident(pos, first <> string.concat(rest)))
 /// }
 /// ```
