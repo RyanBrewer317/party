@@ -372,3 +372,35 @@ pub fn until(
     },
   )
 }
+
+/// A `many` parser that also gets to update some state with each success
+pub fn stateful_many(state: s, p: Parser(fn(s)->#(a, s), e)) -> Parser(#(List(a), s), e) {
+  Parser(fn(source, pos) {
+    case run(p, source, pos) {
+      Error(_) -> Ok(#(#([], state), source, pos))
+      Ok(#(f, r, pos2)) -> {
+        let #(x, s) = f(state)
+        result.map(run(stateful_many(s, p), r, pos2), fn(res) {
+          let #(#(rest, s2), r2, pos3) = res
+          #(#([x, ..rest], s2), r2, pos3)
+        })
+      }
+    }
+  })
+}
+
+/// A `many1` parser that also gets to update some state with each success
+pub fn stateful_many1(state: s, p: Parser(fn(s)->#(a, s), e)) -> Parser(#(List(a), s), e) {
+  Parser(fn(source, pos) {
+    case run(p, source, pos) {
+      Error(e) -> Error(e)
+      Ok(#(f, r, pos2)) -> {
+        let #(x, s) = f(state)
+        result.map(run(stateful_many(s, p), r, pos2), fn(res) {
+          let #(#(rest, s), r2, pos3) = res
+          #(#([x, ..rest], s), r2, pos3)
+        })
+      }
+    }
+  })
+}

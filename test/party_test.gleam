@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import gleeunit
-import gleeunit/should
-import party
 import gleam/int
 import gleam/list
 import gleam/string
+import gleeunit
+import gleeunit/should
+import party
 
 pub fn main() {
   gleeunit.main()
@@ -297,4 +297,15 @@ pub fn multiline_comment_test() {
     "hello! * */ ",
   )
   |> should.equal(Ok("hello! * "))
+}
+
+pub fn stateful_many_test() {
+  let stateful_char = fn(c) {
+    party.char(c)
+    |> party.map(fn(x) { fn(counter) { #(x, counter /. 2.0) } })
+  }
+  party.go(party.stateful_many(100.0, stateful_char("a")), "aaab")
+  |> should.equal(Ok(#(["a", "a", "a"], 12.5)))
+  party.go(party.stateful_many(100.0, stateful_char("b")), "aaab")
+  |> should.equal(Ok(#([], 100.0)))
 }
