@@ -1,12 +1,12 @@
+//// A simple parser combinator library.
+//// Party is stable, though breaking changes might come in a far-future 2.0 or 3.0 release.
+
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-//// A simple parser combinator library.
-//// Party is stable, though breaking changes might come in a far-future 2.0 or 3.0 release.
-
-import gleam/string
 import gleam/result
+import gleam/string
 
 /// The custom error type for the parser, 
 /// which can itself be parameterized by a user-defined error type.
@@ -32,8 +32,9 @@ pub opaque type Parser(a, e) {
   )
 }
 
-/// Apply a parser to a list of graphemes (holding on to extra result info that is hidden from the library user).
-fn run(
+/// ADVANCED (exposes the internals of `party`)
+/// Apply a parser to a list of graphemes (holding on to extra result info that `party` typically threads for you).
+pub fn run(
   p: Parser(a, e),
   src: List(String),
   pos: Position,
@@ -59,7 +60,7 @@ pub fn pos() -> Parser(Position, e) {
 /// Parse a character if it matches the predicate.
 pub fn satisfy(when pred: fn(String) -> Bool) -> Parser(String, e) {
   Parser(fn(source, pos) {
-    let assert Position(row, col) = pos
+    let Position(row, col) = pos
     case source {
       [h, ..t] ->
         case pred(h) {
@@ -374,7 +375,10 @@ pub fn until(
 }
 
 /// A `many` parser that also gets to update some state with each success
-pub fn stateful_many(state: s, p: Parser(fn(s)->#(a, s), e)) -> Parser(#(List(a), s), e) {
+pub fn stateful_many(
+  state: s,
+  p: Parser(fn(s) -> #(a, s), e),
+) -> Parser(#(List(a), s), e) {
   Parser(fn(source, pos) {
     case run(p, source, pos) {
       Error(_) -> Ok(#(#([], state), source, pos))
@@ -390,7 +394,10 @@ pub fn stateful_many(state: s, p: Parser(fn(s)->#(a, s), e)) -> Parser(#(List(a)
 }
 
 /// A `many1` parser that also gets to update some state with each success
-pub fn stateful_many1(state: s, p: Parser(fn(s)->#(a, s), e)) -> Parser(#(List(a), s), e) {
+pub fn stateful_many1(
+  state: s,
+  p: Parser(fn(s) -> #(a, s), e),
+) -> Parser(#(List(a), s), e) {
   Parser(fn(source, pos) {
     case run(p, source, pos) {
       Error(e) -> Error(e)
