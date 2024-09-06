@@ -138,6 +138,7 @@ pub fn between(
   return(x)
 }
 
+/// Parse a line of characters as a String. The new line at the end is discarded
 pub fn line() -> Parser(String, e) {
   until(any_char(), char("\n"))
   |> map(string.concat)
