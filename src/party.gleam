@@ -77,17 +77,7 @@ pub fn satisfy(when pred: fn(String) -> Bool) -> Parser(String, e) {
 
 /// Parse a single character.
 pub fn any_char() -> Parser(String, e) {
-  Parser(fn(source, pos) {
-    let assert Position(row, col) = pos
-    case source {
-      [h, ..t] ->
-        case h {
-          "\n" -> Ok(#(h, t, Position(row + 1, 0)))
-          _ -> Ok(#(h, t, Position(row, col + 1)))
-        }
-      [] -> Error(Unexpected(pos, "EOF"))
-    }
-  })
+  satisfy(fn(_) { True })
 }
 
 /// Parse a lowercase letter.
@@ -138,9 +128,16 @@ pub fn between(
   return(x)
 }
 
-/// Parse a line of characters as a String. The new line at the end is discarded
-pub fn line() -> Parser(String, e) {
+/// Parse the rest of a line and return the array of parsed characters.
+/// The newline character at the end is discarded.
+pub fn line() -> Parser(List(String), e) {
   until(any_char(), char("\n"))
+}
+
+/// Parse the rest of a line and return the parsed characters as a String.
+/// The newline character at the end is discarded.
+pub fn line_concat() -> Parser(String, e) {
+  line()
   |> map(string.concat)
 }
 

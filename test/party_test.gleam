@@ -76,10 +76,17 @@ pub fn between_test() {
 }
 
 pub fn line_test() {
-  party.go(party.line(), "abcdefg hij klmnop \n")
-  |> should.equal(Ok("abcdefg hij klmnop "))
-  party.go(party.line(), "abcdefg hij klmnop ")
-  |> should.equal(Error(party.Unexpected(party.Position(1, 20), "EOF")))
+  party.go(party.line(), "abcde fgh \n")
+  |> should.equal(Ok(["a", "b", "c", "d", "e", " ", "f", "g", "h", " "]))
+  party.go(party.line(), "abcde fgh ")
+  |> should.equal(Error(party.Unexpected(party.Position(1, 11), "EOF")))
+}
+
+pub fn line_concat_test() {
+  party.go(party.line_concat(), "abcde fgh \n")
+  |> should.equal(Ok("abcde fgh "))
+  party.go(party.line_concat(), "abcde fgh ")
+  |> should.equal(Error(party.Unexpected(party.Position(1, 11), "EOF")))
 }
 
 pub fn lowercase_letter_test() {
