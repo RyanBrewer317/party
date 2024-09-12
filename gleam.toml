@@ -11,4 +11,4 @@ gleam = ">= 0.32.0"
 gleam_stdlib = "~> 0.36" # 0.36 <= version < 0.37
 
 [dev-dependencies]
-gleeunit = "~> 0.10"
+gleeunit = ">= 0.10.0"
