@@ -45,6 +45,50 @@ pub fn satisfy_test() {
   |> should.equal(Error(party.Unexpected(party.Position(1, 1), "a")))
 }
 
+pub fn any_char_test() {
+  party.go(party.any_char(), "a")
+  |> should.equal(Ok("a"))
+  party.go(party.any_char(), "")
+  |> should.equal(Error(party.Unexpected(party.Position(1, 1), "EOF")))
+}
+
+pub fn between_test() {
+  party.go(
+    party.between(party.char("{"), party.char("a"), party.char("}")),
+    "{a}",
+  )
+  |> should.equal(Ok("a"))
+  party.go(
+    party.between(party.char("{"), party.char("a"), party.char("}")),
+    "(a}",
+  )
+  |> should.equal(Error(party.Unexpected(party.Position(1, 1), "(")))
+  party.go(
+    party.between(party.char("{"), party.char("a"), party.char("}")),
+    "{b}",
+  )
+  |> should.equal(Error(party.Unexpected(party.Position(1, 2), "b")))
+  party.go(
+    party.between(party.char("{"), party.char("a"), party.char("}")),
+    "{a)",
+  )
+  |> should.equal(Error(party.Unexpected(party.Position(1, 3), ")")))
+}
+
+pub fn line_test() {
+  party.go(party.line(), "abcde fgh \n")
+  |> should.equal(Ok(["a", "b", "c", "d", "e", " ", "f", "g", "h", " "]))
+  party.go(party.line(), "abcde fgh ")
+  |> should.equal(Error(party.Unexpected(party.Position(1, 11), "EOF")))
+}
+
+pub fn line_concat_test() {
+  party.go(party.line_concat(), "abcde fgh \n")
+  |> should.equal(Ok("abcde fgh "))
+  party.go(party.line_concat(), "abcde fgh ")
+  |> should.equal(Error(party.Unexpected(party.Position(1, 11), "EOF")))
+}
+
 pub fn lowercase_letter_test() {
   party.go(party.lowercase_letter(), "a")
   |> should.equal(Ok("a"))

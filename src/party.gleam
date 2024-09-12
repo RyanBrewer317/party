@@ -76,6 +76,11 @@ pub fn satisfy(when pred: fn(String) -> Bool) -> Parser(String, e) {
   })
 }
 
+/// Parse a single character.
+pub fn any_char() -> Parser(String, e) {
+  satisfy(fn(_) { True })
+}
+
 /// Parse a lowercase letter.
 pub fn lowercase_letter() -> Parser(String, e) {
   satisfy(when: fn(c) { string.contains("abcdefghijklmnopqrstuvwxyz", c) })
@@ -109,6 +114,32 @@ pub fn digits() -> Parser(String, e) {
 /// Parse the first parser, or the second if the first fails.
 pub fn either(p: Parser(a, e), q: Parser(a, e)) -> Parser(a, e) {
   Parser(fn(source, pos) { result.or(run(p, source, pos), run(q, source, pos)) })
+}
+
+/// Parse `open`, followed by `p` and `close`. Returns the value returned by `p`.
+/// The values returned by `open` and `close` are discarded.
+pub fn between(
+  open: Parser(_, e),
+  p: Parser(a, e),
+  close: Parser(_, e),
+) -> Parser(a, e) {
+  use _ <- do(open)
+  use x <- do(p)
+  use _ <- do(close)
+  return(x)
+}
+
+/// Parse the rest of a line and return the array of parsed characters.
+/// The newline character at the end is discarded.
+pub fn line() -> Parser(List(String), e) {
+  until(any_char(), char("\n"))
+}
+
+/// Parse the rest of a line and return the parsed characters as a String.
+/// The newline character at the end is discarded.
+pub fn line_concat() -> Parser(String, e) {
+  line()
+  |> map(string.concat)
 }
 
 /// Parse with the first parser in the list that doesn't fail.
