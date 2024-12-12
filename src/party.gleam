@@ -8,9 +8,9 @@
 import gleam/result
 import gleam/string
 
-/// The custom error type for the parser, 
+/// The custom error type for the parser,
 /// which can itself be parameterized by a user-defined error type.
-/// The user-defined error type is useful for, for example, 
+/// The user-defined error type is useful for, for example,
 /// adding a `int.parse` call into your parser pipeline.
 /// See `try` for using this feature.
 pub type ParseError(e) {
@@ -23,7 +23,7 @@ pub type Position {
   Position(row: Int, col: Int)
 }
 
-/// The parser type, parameterized by the type it parses and 
+/// The parser type, parameterized by the type it parses and
 /// the user-defined error type it can return.
 pub opaque type Parser(a, e) {
   Parser(
@@ -221,6 +221,20 @@ pub fn seq(p: Parser(a, e), q: Parser(b, e)) -> Parser(b, e) {
   q
 }
 
+/// A version of `seq` for pleasant interplay with gleam's `use` syntax.
+/// example:
+/// ```
+/// fn pair() -> Parser(#(String, String), e) {
+///     use a <- do(alphanum())
+///     use <- drop(char(","))
+///     use b <- do(alphanum())
+///     return(#(a, b))
+/// }
+/// ```
+pub fn drop(p: Parser(a, e), f: fn() -> Parser(b, e)) -> Parser(b, e) {
+  seq(p, lazy(f))
+}
+
 /// Parse a sequence separated by the given separator parser.
 pub fn sep(parser: Parser(a, e), by s: Parser(b, e)) -> Parser(List(a), e) {
   use res <- do(perhaps(sep1(parser, by: s)))
@@ -249,7 +263,7 @@ pub fn map(p: Parser(a, e), f: fn(a) -> b) -> Parser(b, e) {
 }
 
 /// Do `p`, the apply `f` to the result if it succeeded.
-/// `f` itself can fail with the user-defined error type, 
+/// `f` itself can fail with the user-defined error type,
 /// and if it does the result is a `UserError` with the error.
 pub fn try(p: Parser(a, e), f: fn(a) -> Result(b, e)) -> Parser(b, e) {
   Parser(fn(source, pos) {
@@ -264,7 +278,7 @@ pub fn try(p: Parser(a, e), f: fn(a) -> Result(b, e)) -> Parser(b, e) {
   })
 }
 
-/// Transform the user-defined error type 
+/// Transform the user-defined error type
 /// with a user-provided conversion function.
 pub fn error_map(p: Parser(a, e), f: fn(e) -> f) -> Parser(a, f) {
   Parser(fn(source, pos) {
@@ -348,7 +362,7 @@ pub fn lazy(p: fn() -> Parser(a, e)) -> Parser(a, e) {
 }
 
 /// A monadic bind for pleasant interplay with gleam's `use` syntax.
-/// example: 
+/// example:
 /// ```
 /// fn identifier() -> Parser(String, e) {
 ///     use pos <- do(pos())

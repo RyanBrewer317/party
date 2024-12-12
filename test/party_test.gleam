@@ -318,6 +318,16 @@ pub fn do_return_test() {
   |> should.equal(Ok("aa"))
 }
 
+pub fn do_drop_return_test() {
+  {
+    use a <- party.do(party.char("a"))
+    use <- party.drop(party.char("*"))
+    party.return(a <> a)
+  }
+  |> party.go("a*")
+  |> should.equal(Ok("aa"))
+}
+
 pub fn fail_test() {
   party.go(party.fail(), "a")
   |> should.equal(Error(party.Unexpected(party.Position(1, 1), "a")))
